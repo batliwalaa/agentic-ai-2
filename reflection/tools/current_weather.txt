@@ -1,0 +1,1 @@
+The current temperature is 44.2°F, with a high of 46.3°F and a low of 37.4°F today.
