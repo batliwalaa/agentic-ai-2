@@ -8,6 +8,7 @@ import xml.etree.ElementTree as ET
 import requests
 from tavily import TavilyClient
 from dotenv import load_dotenv
+import wikipedia
 
 load_dotenv()
 
@@ -60,7 +61,6 @@ def arxiv_search(query: str, max_results: int = 5) -> list[dict]:
     except Exception as e:
       return [{"error": f"XML Parse Error: {str(e)}"}]
     
-
 arxiv_tool_def = {
    "type": "function",
    "function": {
@@ -83,6 +83,7 @@ arxiv_tool_def = {
       } 
    }
 }
+
 
 def tavily_search(query: str, max_results: int = 5, include_images:bool = False) -> list[dict]:
     """
@@ -126,7 +127,6 @@ def tavily_search(query: str, max_results: int = 5, include_images:bool = False)
     except Exception as e:
         return [{"error": str(e)}]
     
-
 tavily_tool_def = {
    "type": "function",
     "function": {
@@ -153,6 +153,55 @@ tavily_tool_def = {
           "required": ["query"]
         } 
   }
+}
+
+
+def wikipedia_search(query: str, sentences: int = 5) -> list[dict]:
+    """
+    Searches Wikipedia for a summary of the given query.
+
+    Args:
+        query (str): Search query for Wikipedia.
+        sentences (int): Number of sentences to include in the summary.
+
+    Returns:
+        list[dict]: A list with a single dictionary containing title, summary, and URL.
+    """
+
+    try:
+        page_title = wikipedia.search(query)[0]
+        page = wikipedia.page(page_title)
+        summary = wikipedia.summary(page_title, sentences = sentences)
+
+        return [{
+            "title": page.title,
+            "summary": summary,
+            "url": page.url
+        }]
+    except Exception as e:
+        return [{ "error": str(e) }]
+   
+wikipedia_tool_def = {
+    "type": "function",
+    "function": {
+        "name": "wikipedia_search",
+        "description": "Searches for a Wikipedia article summary by query string.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Search keywords for wikipedia article"
+                },
+                "sentences": {
+                    "type": "integer",
+                    "description": "Number of sentences in the summary.",
+                    "default": 5
+                }
+            },
+            "required": ["query"]
+        }
+    }
 }
 
 
@@ -202,3 +251,8 @@ def parse_input(report):
         "Expected string or list."
     )
 
+tool_mapping = {
+    "tavily_search": tavily_search,
+    "arxiv_search": arxiv_search,
+    "wikipedia_search": wikipedia_search
+}
